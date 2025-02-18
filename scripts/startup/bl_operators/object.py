@@ -220,10 +220,16 @@ class SubdivisionSet(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     level: IntProperty(
-        name="Level",
+        name="Viewport",
         min=-100, max=100,
         soft_min=-6, soft_max=6,
         default=1,
+    )
+    level1: IntProperty(
+        name="Render",
+        min=-100, max=100,
+        soft_min=-6, soft_max=6,
+        default=2,
     )
     relative: BoolProperty(
         name="Relative",
@@ -238,6 +244,7 @@ class SubdivisionSet(Operator):
 
     def execute(self, context):
         level = self.level
+        level1 = self.level1
         relative = self.relative
 
         if relative and level == 0:
@@ -245,6 +252,7 @@ class SubdivisionSet(Operator):
 
         if not relative and level < 0:
             self.level = level = 0
+            self.level1 = level1 = 0
 
         def set_object_subd(obj):
             for mod in obj.modifiers:
@@ -261,6 +269,7 @@ class SubdivisionSet(Operator):
                         elif obj.mode == 'OBJECT':
                             if mod.levels != level:
                                 mod.levels = level
+                                mod.render_levels = level1
                         return
                     else:
                         if obj.mode == 'SCULPT':
@@ -269,14 +278,17 @@ class SubdivisionSet(Operator):
                         elif obj.mode == 'OBJECT':
                             if mod.levels + level <= mod.total_levels:
                                 mod.levels += level
+                                mod.render_levels += level1
                         return
 
                 elif mod.type == 'SUBSURF':
                     if relative:
                         mod.levels += level
+                        mod.render_levels += level1
                     else:
                         if mod.levels != level:
                             mod.levels = level
+                            mod.render_levels = level1
 
                     return
 
@@ -290,6 +302,7 @@ class SubdivisionSet(Operator):
                 else:
                     mod = obj.modifiers.new("Subdivision", 'SUBSURF')
                     mod.levels = level
+                    mod.render_levels = level1
             except Exception:
                 self.report({'WARNING'}, "Modifiers cannot be added to object: " + obj.name)
 
